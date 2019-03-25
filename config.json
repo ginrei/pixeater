@@ -1,0 +1,7 @@
+{
+  "site_urls": ["https://www.example.com"],
+  "max_depth": 3,
+  "extensions": ["jpg", "jpeg", "png"],
+  "min_size": { "width": 400, "height": 400 },
+  "xorigin_policy": "moderate"
+}
