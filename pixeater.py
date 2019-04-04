@@ -64,9 +64,32 @@ class Crawler(HTMLParser):
                 self.current_moderate_origin = re.search('[^\.]+\.[^\.]+$', self.current_origin).group(0)
             self.visited.append(response.url)
 
-            if re.match('image\/', response.headers['content-type']):
-                save_file_name = re.split('\/', urlparse(response.url).path)[-1]
+            self.current_location = response.url
+
+            if response.status_code == 404:
+                continue
+
+            # TODO: merge text image routing
+
+            if re.match('text\/', response.headers['content-type']):
+                save_file_name = re.sub('^\/', '', urlparse(response.url).path)
+                if save_file_name.endswith('/') or save_file_name == '':
+                    save_file_name = save_file_name + 'index.html'
                 save_file_path = os.path.join(self.save_dir, save_file_name)
+
+                if not os.path.exists(os.path.dirname(save_file_path)):
+                    os.makedirs(os.path.dirname(save_file_path))
+
+                with open(save_file_path, 'wb') as file:
+                    file.write(response.content)
+
+            if re.match('image\/', response.headers['content-type']):
+                save_file_name = re.sub('^\/', '', urlparse(response.url).path)
+                save_file_path = os.path.join(self.save_dir, save_file_name)
+
+                if not os.path.exists(os.path.dirname(save_file_path)):
+                    os.makedirs(os.path.dirname(save_file_path))
+
                 image = Image.open(BytesIO(response.content))
 
                 # Omit under-minimum size
@@ -83,7 +106,7 @@ class Crawler(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        if tag == 'a' and 'href' in attrs:
+        if (tag == 'a' or tag == 'area' or tag == 'link') and 'href' in attrs:
             href = urljoin(self.current_location, attrs['href'])
         elif tag == 'img':
             href = urljoin(self.current_location, attrs['src'])
